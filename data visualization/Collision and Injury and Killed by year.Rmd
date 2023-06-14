@@ -1,0 +1,95 @@
+---
+title: "Presentation3_Q2"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Library
+```{r}
+library(dplyr)
+#install.packages("dlookr")
+#install.packages("Rttf2pt1")
+#install.packages("inum")
+library(dlookr)
+library(tidyverse)
+#install.packages("flextable")
+# install.packages("gdtools")
+library(flextable)
+library(tidyr)
+library(ggplot2)
+library(lubridate)
+```
+
+
+## Import data
+```{r}
+collision = read_csv("/Users/queenie1127/Desktop/2023 Summer/5900/processed_data_2.csv")
+```
+## Collision and Injury and Killed by year
+```{r}
+#collision$`CRASH DATE` = dmy(collision$`CRASH DATE`)
+collision$year <- format(collision$`CRASH DATE`, "%Y")
+#summary(collision)
+```
+
+### Total number of collision by year
+```{r}
+collision %>%
+  group_by(year) %>%
+  summarize(total_collision = n()) %>%
+  ggplot(aes(x = year, y = total_collision)) +
+  geom_bar(stat = "identity") +
+  theme_minimal()
+
+```
+
+
+### Total number of injured by year
+```{r}
+collision %>%
+  mutate(`NUMBER OF PERSONS INJURED` = replace(`NUMBER OF PERSONS INJURED`, is.na(`NUMBER OF PERSONS INJURED`), 0)) %>%
+  group_by(year) %>%
+  summarize(total_people_injured = sum(`NUMBER OF PERSONS INJURED`)) %>%
+  ggplot(aes(x = year, y = total_people_injured)) +
+  geom_bar(stat = "identity")
+  
+```
+
+
+### Mean number of injured
+```{r}
+collision %>%
+  mutate(`NUMBER OF PERSONS INJURED` = replace(`NUMBER OF PERSONS INJURED`, is.na(`NUMBER OF PERSONS INJURED`), 0)) %>%
+  group_by(year) %>%
+  summarize(avg_people_injured = mean(`NUMBER OF PERSONS INJURED`)) %>%
+  ggplot(aes(x = year, y = avg_people_injured)) +
+  geom_bar(stat = "identity")
+```
+
+
+### Total number of killed
+```{r}
+collision %>%
+  mutate(`NUMBER OF PERSONS KILLED` = replace(`NUMBER OF PERSONS KILLED`, is.na(`NUMBER OF PERSONS KILLED`), 0)) %>%
+  group_by(year) %>%
+  summarize(total_people_killed = sum(`NUMBER OF PERSONS KILLED`)) %>%
+  ggplot(aes(x = year, y = total_people_killed)) +
+  geom_bar(stat = "identity")
+```
+
+### Mean number of killed
+```{r}
+collision %>%
+  mutate(`NUMBER OF PERSONS KILLED` = replace(`NUMBER OF PERSONS KILLED`, is.na(`NUMBER OF PERSONS KILLED`), 0)) %>%
+  group_by(year) %>%
+  summarize(avg_people_killed = mean(`NUMBER OF PERSONS KILLED`)) %>%
+  ggplot(aes(x = year, y = avg_people_killed)) +
+  geom_bar(stat = "identity")
+```
+
