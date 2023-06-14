@@ -1,0 +1,64 @@
+---
+title: "Speed Limit"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## library
+```{r}
+library(dplyr)
+library(tidyverse)
+library(tidyr)
+library(ggplot2)
+```
+
+## Import data
+```{r}
+speed_limit <- read_csv('/Users/queenie1127/Desktop/2023 Summer/5900/dot_VZV_Speed_Limits_20230512.csv')
+```
+
+## Adding LONG and LAT value
+```{r}
+library(sf)
+
+# Create a MultiLineString object from the WKT string
+multilinestring <- st_as_sfc(speed_limit$the_geom)
+
+# Separate the line segments into separate rows
+separated <- st_cast(multilinestring, "LINESTRING")
+
+# Extract latitude and longitude values from the separated geometries
+coordinates <- st_coordinates(separated)
+latitude <- coordinates[, "Y"]
+longitude <- coordinates[, "X"]
+coordinates <- as.data.frame(coordinates)
+
+# Add row numbers to 
+speed_limit <- speed_limit %>%
+  mutate(row_number = row_number())%>%
+  select(street, postvz_sg, postvz_sl, Shape_Leng, row_number)
+
+# Combine the attributes, latitude, and longitude into a new dataframe
+speed_limit_adj <- merge(speed_limit, coordinates, by.x = "row_number", by.y = "L1")
+
+# Change the name
+speed_limit_adj <- speed_limit_adj %>%
+  rename(LONGITUDE = X, LATITUDE = Y)
+
+# View the result
+speed_limit_adj
+
+```
+
+## Export Data
+```{r}
+#write.csv(speed_limit_adj, "/Users/queenie1127/Desktop/2023 Summer/5900/Speed_Limits.csv", row.names = TRUE)
+
+```
+
