@@ -1,0 +1,44 @@
+import pandas as pd
+import numpy as np
+
+collision_data = pd.read_csv("processed_data.csv")
+
+# heatmap for the whole collision dataset
+import plotly.express as px
+
+heat_map_data = collision_data[['LATITUDE', 'LONGITUDE','COLLISION_ID']]
+heat_map_data = heat_map_data.dropna()
+
+heatmap_counts = heat_map_data.groupby(['LATITUDE', 'LONGITUDE']).size().reset_index(name="Count")
+
+fig = px.density_mapbox(heatmap_counts, lat='LATITUDE', lon='LONGITUDE', z='Count', mapbox_style="stamen-terrain",  color_continuous_scale= 'reds')
+
+fig.update_layout(title_text="Collision Frequency Heatmap")
+fig.show()
+
+
+# heatmap for collision in sepcific year
+collision_data['CRASH DATE'] = pd.to_datetime(collision_data['CRASH DATE'])
+collision_data['YEAR'] = collision_data['CRASH DATE'].dt.year
+
+heat_map_data = collision_data[['LATITUDE', 'LONGITUDE','COLLISION_ID','YEAR']]
+heat_map_data = heat_map_data.dropna()
+
+heatmap_counts = heat_map_data.groupby(['LATITUDE', 'LONGITUDE','YEAR']).size().reset_index(name="Count")
+
+heatmap_2014 = heatmap_counts[(heatmap_counts['YEAR'] == 2014)]
+heatmap_2018 = heatmap_counts[(heatmap_counts['YEAR'] == 2018)]
+heatmap_2022 = heatmap_counts[(heatmap_counts['YEAR'] == 2022)]
+
+fig1 = px.density_mapbox(heatmap_2014, lat='LATITUDE', lon='LONGITUDE', z='Count', mapbox_style="stamen-terrain",  color_continuous_scale= 'reds')
+fig2 = px.density_mapbox(heatmap_2018, lat='LATITUDE', lon='LONGITUDE', z='Count', mapbox_style="stamen-terrain",  color_continuous_scale= 'reds')
+fig3 = px.density_mapbox(heatmap_2022, lat='LATITUDE', lon='LONGITUDE', z='Count', mapbox_style="stamen-terrain",  color_continuous_scale= 'reds')
+
+
+fig1.update_layout(title_text="2014 Collision Frequency Heatmap")
+fig2.update_layout(title_text="2018 Collision Frequency Heatmap")
+fig3.update_layout(title_text="2022 Collision Frequency Heatmap")
+
+fig1.show()
+fig2.show()
+fig3.show()
