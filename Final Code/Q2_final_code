@@ -1,0 +1,164 @@
+# Question 2
+Have different fatality/injury rates(pedestrian car bicycle)changed over the years, signaling the success of any of the initiatives?
+
+```{r}
+library(dplyr)
+library(htmltools)
+library(dlookr)
+library(tidyverse)
+library(htmltools)
+library(tidyr)
+library(ggplot2)
+library(lubridate)
+#install.packages("lsr")
+library(lsr)
+```
+
+```{r}
+collision = read.csv("processed_data.csv")
+```
+
+Create new columns for years
+```{r}
+collision$CRASH.DATE <- ymd(collision$CRASH.DATE)
+collision$year <- format(collision$CRASH.DATE, "%Y")
+```
+
+## Data Visulization
+
+```{r}
+library(ggplot2)
+library(dplyr)
+
+variable_list <- list(
+  NUMBER.OF.PERSONS.KILLED = "Total Killed",
+  NUMBER.OF.PERSONS.INJURED = "Total Injured",
+  NUMBER.OF.CYCLIST.KILLED = "Total Killed Cyclists",
+  NUMBER.OF.CYCLIST.INJURED = "Total Injured Cyclists",
+  NUMBER.OF.PEDESTRIANS.KILLED = "Total Killed Pedestrians",
+  NUMBER.OF.PEDESTRIANS.INJURED = "Total Injured Pedestrians",
+  NUMBER.OF.MOTORIST.KILLED = "Total Killed Motorists",
+  NUMBER.OF.MOTORIST.INJURED = "Total Injured Motorists"
+)
+
+# Loop over the variables and create graphs
+for (variable_name in names(variable_list)) {
+  variable <- sym(variable_name)
+  
+  graph <- collision %>%
+    mutate(!!variable := replace(!!variable, is.na(!!variable), 0)) %>%
+    group_by(year) %>%
+    summarize(
+      total_people_injured = sum(!!variable),
+      avg_people_injured = mean(!!variable)
+    ) %>%
+    ggplot(aes(x = year, y = total_people_injured, fill = year)) +
+    geom_bar(stat = "identity") +
+    labs(
+      x = "Year",
+      y = variable_list[[variable_name]],
+      title = paste(variable_list[[variable_name]], "by Year")
+    ) +
+    geom_text(aes(label = total_people_injured), vjust = -0.5, size = 3) +
+    geom_line(aes(x = year, y = avg_people_injured * 100000, group = 1), color = "blue") +
+    geom_text(aes(x = year, y = avg_people_injured * 100000, label = round(avg_people_injured, 4)), vjust = -1, size = 3, color = "black") +
+    scale_y_continuous(sec.axis = sec_axis(~. / 100000, name = "Average"))
+  
+  print(graph)
+}
+
+```
+
+## t test
+
+### Comapre the years between this year and next year
+```{r}
+# List of years to compare
+years <- c(2013, 2014, 2017, 2018) 
+# List of variables to compare
+variables <- c("NUMBER.OF.PERSONS.KILLED", "NUMBER.OF.PERSONS.INJURED",
+               "NUMBER.OF.CYCLIST.KILLED", "NUMBER.OF.CYCLIST.INJURED",
+               "NUMBER.OF.PEDESTRIANS.KILLED","NUMBER.OF.PEDESTRIANS.INJURED",
+               "NUMBER.OF.MOTORIST.KILLED", "NUMBER.OF.MOTORIST.INJURED")  
+
+
+results <- list()  # Initialize an empty list to store the results
+
+for (year in years) {
+  for (variable in variables) {
+    x <- collision[collision$year == year, ]
+    y <- collision[collision$year == (year + 1), ]
+    
+    result <- t.test(x[[variable]], y[[variable]], mu = 0)
+    result$year <- year
+    result$variable <- variable
+    
+    results <- c(results, list(result))
+  }
+}
+
+# Print the results
+for (result in results) {
+  cat("Year:", result$year,"-",result$year+1, "| Variable:", result$variable, "\n")
+  cat("p-value:", result$p.value, "\n")
+  cat("\n")
+}
+
+```
+
+### Effect size (Cohen’s d)
+```{r}
+effective_sizes <- list()  # Initialize an empty list to store the effect sizes
+
+for (result in results) {
+  if (result$p.value < 0.05) {
+    variable <- result$variable
+    x <- collision[collision$year == result$year, ]
+    y <- collision[collision$year == (result$year + 1), ]
+    
+    # Calculate the effect size using cohensD function
+    effect_size <- cohensD(x[[variable]], y[[variable]])
+    
+    result$effect_size <- effect_size
+    effective_sizes <- c(effective_sizes, list(result))
+  }
+}
+
+# Print the results with effect sizes
+for (result in effective_sizes) {
+  cat("Year:", result$year,"-",result$year+1, "| Variable:", result$variable, "\n")
+  cat("p-value:", result$p.value, "\n")
+  
+  if (!is.na(result$effect_size)) {
+    cat("Effect Size:", result$effect_size, "\n")
+  } else {
+    cat("Effect Size: Not applicable for non-numeric variables \n")
+  }
+  
+  cat("\n")
+}
+
+
+```
+### result data frame
+```{r}
+# Create an empty data frame
+effect_size_df <- data.frame(year = integer(), variable = character(), effect_size = numeric(), stringsAsFactors = FALSE)
+
+# Loop through the effective_sizes list and populate the data frame
+for (result in effective_sizes) {
+  year <- paste(result$year,"-", result$year+1)
+  variable <- result$variable
+  effect_size <- result$effect_size
+  
+  # Add a row to the data frame
+  effect_size_df <- rbind(effect_size_df, data.frame(year, variable, effect_size, stringsAsFactors = FALSE))
+}
+
+# Print the resulting data frame
+print(effect_size_df)
+
+```
+
+
+
