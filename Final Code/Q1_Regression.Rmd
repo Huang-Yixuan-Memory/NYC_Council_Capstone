@@ -1,0 +1,105 @@
+---
+title: "Q1_Regression"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Library
+```{r}
+library(dplyr)
+library(ggplot2)
+library(tidyverse)
+library(tidyr)
+library(lubridate)
+library(mgcv)
+```
+
+## Data Preparation
+```{r}
+collision_by_day = read_csv("/Users/queenie1127/Desktop/2023 Summer/5900/collision_w_speedlimit_by_day.csv")
+```
+```{r}
+collision_by_day$crash_date <- mdy(collision_by_day$crash_date)
+collision_by_day <- collision_by_day %>%
+  mutate(injured_rate = number_injured / number_collision,
+         killed_rate = number_killed / number_collision,
+         if_holiday = ifelse(Holiday == "No", "No", "Yes"))
+```
+
+### Split
+```{r}
+before <- collision_by_day %>%
+  filter(crash_date < as.Date("2014-11-07"))
+after <- collision_by_day %>%
+  filter(crash_date >= as.Date("2014-11-07"))
+```
+
+## Regression
+### Number of Collision
+```{r}
+collision_before <- gam(number_collision ~ effective_area + if_holiday + s(avg_temperature)
+                        + s(precipitation_amount) + s(snowfall_amount),
+                        method = 'REML', 
+                        data = before)
+
+collision_after <- gam(number_collision ~ effective_area + if_holiday + (avg_temperature)
+                        + s(precipitation_amount) + s(snowfall_amount),
+                        method = 'REML', 
+                        data = after)
+```
+
+```{r}
+summary(collision_before)
+```
+
+```{r}
+summary(collision_after)
+```
+
+### Injured Rate
+```{r}
+injured_rate_before <- gam(injured_rate ~ effective_area + if_holiday + s(avg_temperature)
+                        + s(precipitation_amount) + s(snowfall_amount),
+                        method = 'REML', 
+                        data = before)
+
+injured_rate_after <- gam(injured_rate ~ effective_area + if_holiday + (avg_temperature)
+                        + s(precipitation_amount) + s(snowfall_amount),
+                        method = 'REML', 
+                        data = after)
+```
+
+```{r}
+summary(injured_rate_before)
+```
+
+```{r}
+summary(injured_rate_after)
+```
+
+### Killed Rate
+```{r}
+killed_rate_before <- gam(killed_rate ~ effective_area + if_holiday + s(avg_temperature)
+                        + s(precipitation_amount) + s(snowfall_amount),
+                        method = 'REML', 
+                        data = before)
+
+killed_rate_after <- gam(killed_rate ~ effective_area + if_holiday + (avg_temperature)
+                        + s(precipitation_amount) + s(snowfall_amount),
+                        method = 'REML', 
+                        data = after)
+```
+
+```{r}
+summary(killed_rate_before)
+```
+
+```{r}
+summary(killed_rate_after)
+```
