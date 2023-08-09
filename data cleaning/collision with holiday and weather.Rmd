@@ -1,0 +1,401 @@
+---
+title: "Collision with holiday and weather"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Library
+
+```{r}
+library(dplyr)
+#install.packages("dlookr")
+#install.packages("Rttf2pt1")
+#install.packages("inum")
+library(dlookr)
+library(tidyverse)
+#install.packages("flextable")
+# install.packages("gdtools")
+#library(flextable)
+library(tidyr)
+```
+
+## Data Preparation
+
+### Capstone time series with holiday and weather analysis
+
+```{r}
+data = read.csv("collision_w_holidays_n_weather.csv")
+```
+
+### Data quality
+```{r}
+data$CRASH.DATE = as.Date(data$CRASH.DATE)
+data_12_to_23 = subset(data, data$CRASH.DATE >= as.Date("2012-01-01") & data$CRASH.DATE <= as.Date("2023-12-31"))
+
+summary(data_12_to_23)
+```
+```{r}
+diagnose(data_12_to_23) %>%
+  select(-unique_count, -unique_rate)%>%
+  filter(missing_count != 0)%>%
+  arrange(desc(missing_percent))%>% 
+  knitr::kable(align = 'c', format = "markdown")
+```
+```{r}
+data_12_to_23 = subset(data_12_to_23, select = -c(Peak_gust_wind_speed, sunshine_duration))
+
+```
+
+
+#### This one contains the columns that have missing values
+
+```{r}
+diagnose(data_12_to_23) %>%
+  select(-unique_count, -unique_rate)%>%
+  filter(missing_count != 0)%>%
+  arrange(desc(missing_percent))%>% 
+  knitr::kable(align = 'c', format = "markdown")
+```
+
+#### after delete those unnecessary row, here is the whole data quality report the this data set
+
+```{r}
+diagnose(data_12_to_23)%>% 
+  knitr::kable(align = 'c', format = "markdown")
+```
+
+#### diagnose category data and numeric data seperatly
+
+```{r}
+diagnose_category(data_12_to_23)%>% 
+  knitr::kable(align = 'c', format = "markdown")
+```
+```{r}
+diagnose_numeric(data_12_to_23)%>% 
+  knitr::kable(align = 'c', format = "markdown")
+```
+
+### Add a new column: weekday/weekend
+
+```{r}
+data_12_to_23 <- data_12_to_23 %>%
+  mutate(day_type = ifelse(weekdays(CRASH.DATE) %in% c("Saturday", "Sunday"), "Weekend", "Weekday"))
+
+```
+
+## Weather
+
+### snowfall amount vs people injured
+
+```{r}
+library(ggplot2)
+
+summary_table = data_12_to_23 %>%
+  group_by(snowfall_amount) %>%
+  summarize(average_people_injured = mean(NUMBER.OF.PERSONS.INJURED))%>%
+  replace_na(list(average_people_injured = 0))
+
+ggplot(summary_table, aes(x = snowfall_amount, y = average_people_injured)) +
+  geom_bar(stat = "identity", width = 3,color="steelblue",fill="steelblue") +
+  labs(x = "Snowfall Amount", y = "Number of People Injured")
+
+summary_table
+```
+
+### snowfall amount vs people killed
+
+```{r}
+library(ggplot2)
+
+summary_table = data_12_to_23 %>%
+  group_by(snowfall_amount) %>%
+  summarize(average_people_killed = mean(NUMBER.OF.PERSONS.KILLED))%>%
+  replace_na(list(average_people_killed = 0))
+
+ggplot(summary_table, aes(x = snowfall_amount, y = average_people_killed)) +
+  geom_bar(stat = "identity", width = 3,color="steelblue",fill="steelblue") +
+  labs(x = "Snowfall Amount", y = "Number of People Killed")
+
+summary_table
+```
+
+### snowfall amount vs pedestrians injured
+
+```{r}
+library(ggplot2)
+
+summary_table = data_12_to_23 %>%
+  group_by(snowfall_amount) %>%
+  summarize(average_pedestrians_injured = mean(NUMBER.OF.PEDESTRIANS.INJURED))%>%
+  replace_na(list(average_pedestrians_injured = 0))
+
+ggplot(summary_table, aes(x = snowfall_amount, y = average_pedestrians_injured)) +
+  geom_bar(stat = "identity", width = 3,color="steelblue",fill="steelblue") +
+  labs(x = "Snowfall Amount", y = "Number of Pedestrians Injured")
+
+summary_table
+```
+
+### snowfall amount vs pedestrians killed
+
+```{r}
+library(ggplot2)
+
+summary_table = data_12_to_23 %>%
+  group_by(snowfall_amount) %>%
+  summarize(average_pedestrians_killed = mean(NUMBER.OF.PEDESTRIANS.KILLED ))%>%
+  replace_na(list(average_pedestrians_killed = 0))
+
+ggplot(summary_table, aes(x = snowfall_amount, y = average_pedestrians_killed)) +
+  geom_bar(stat = "identity", width = 3,color="steelblue",fill="steelblue") +
+  labs(x = "Snowfall Amount", y = "Number of Pedestrians Killed")
+
+summary_table
+```
+### snowfall amount vs cyclist injured
+
+```{r}
+library(ggplot2)
+
+summary_table = data_12_to_23 %>%
+  group_by(snowfall_amount) %>%
+  summarize(average_cyclist_injured = mean(NUMBER.OF.CYCLIST.INJURED))%>%
+  replace_na(list(average_cyclist_injured = 0))
+
+ggplot(summary_table, aes(x = snowfall_amount, y = average_cyclist_injured)) +
+  geom_bar(stat = "identity",width = 3,color="steelblue",fill="steelblue") +
+  labs(x = "Snowfall Amount", y = "Number of Cyclist Injured")
+
+summary_table
+```
+### snowfall amount vs cyclist killed
+
+```{r}
+library(ggplot2)
+
+summary_table = data_12_to_23 %>%
+  group_by(snowfall_amount) %>%
+  summarize(average_cyclist_killed = mean(NUMBER.OF.CYCLIST.KILLED  ))%>%
+  replace_na(list(average_cyclist_killed = 0))
+
+ggplot(summary_table, aes(x = snowfall_amount, y = average_cyclist_killed)) +
+  geom_bar(stat = "identity", width = 3,color="steelblue",fill="steelblue") +
+  labs(x = "Snowfall Amount", y = "Number of Cyclist Killed")
+
+summary_table
+```
+
+### snowfall amount vs motorist injured
+
+```{r}
+library(ggplot2)
+
+summary_table = data_12_to_23 %>%
+  group_by(snowfall_amount) %>%
+  summarize(average_motorist_injured = mean(NUMBER.OF.MOTORIST.INJURED ))%>%
+  replace_na(list(average_motorist_injured = 0))
+
+ggplot(summary_table, aes(x = snowfall_amount, y = average_motorist_injured)) +
+  geom_bar(stat = "identity", width = 3,color="steelblue",fill="steelblue") +
+  labs(x = "Snowfall Amount", y = "Number of Motorist Injured")
+
+summary_table
+```
+
+### snowfall amount vs motorist killed
+
+```{r}
+library(ggplot2)
+
+summary_table = data_12_to_23 %>%
+  group_by(snowfall_amount) %>%
+  summarize(average_motorist_killed = mean(NUMBER.OF.MOTORIST.KILLED   ))%>%
+  replace_na(list(average_motorist_killed = 0))
+
+ggplot(summary_table, aes(x = snowfall_amount, y = average_motorist_killed)) +
+  geom_bar(stat = "identity", width = 3,color="steelblue",fill="steelblue") +
+  labs(x = "Snowfall Amount", y = "Number of Motorist Killed")
+
+summary_table
+```
+## Date type
+
+### Weekday weekend and holiday VS people injured
+
+```{r}
+data_12_to_23 <- data_12_to_23 %>%
+  mutate(Holiday = na_if(Holiday, ""))
+
+data_12_to_23 <- data_12_to_23 %>%
+  mutate(day_type_holiday = ifelse(!is.na(Holiday), "Holiday", day_type)) 
+
+weekday_weekend_holiday <- data_12_to_23 %>%
+  mutate(day_type1 = ifelse(!is.na(Holiday), "Holiday", day_type)) %>%
+  group_by(day_type1) %>%
+  summarize(count = n())
+
+weekday_weekend_holiday_injury <- data_12_to_23 %>%
+  group_by(day_type_holiday) %>%
+  summarize(total_injured = sum(NUMBER.OF.PERSONS.INJURED, na.rm = TRUE),
+            average_injured = mean(NUMBER.OF.PERSONS.INJURED, na.rm = TRUE))
+```
+
+```{r}
+ggplot(weekday_weekend_holiday_injury, aes(x = day_type_holiday, y = total_injured, fill = day_type_holiday)) +
+  geom_bar(stat = "identity", width = 0.5) +
+  labs(x = "Day Type", y = "Total Injured", title = "Total Injured by Day Type") +
+  geom_text(aes(label = total_injured), vjust = -0.5, size = 3) +
+  theme_minimal() +
+  geom_line(aes(x = day_type_holiday, y = average_injured*1000000, group = 1), color = "blue") +
+  geom_text(aes(x = day_type_holiday, y = average_injured*1000000, label = round(average_injured, 3)), vjust = -1, size = 3, color = "black") +
+  scale_y_continuous(sec.axis = sec_axis(~./1000000, name = "Average Injured"))+scale_fill_brewer(palette = "Set2")
+
+```
+
+### Weekday weekend and holiday VS people killed
+
+```{r}
+weekday_weekend_holiday_killed <- data_12_to_23 %>%
+  group_by(day_type_holiday) %>%
+  summarize(total_killed = sum(NUMBER.OF.PERSONS.KILLED, na.rm = TRUE),
+            average_killed = mean(NUMBER.OF.PERSONS.KILLED, na.rm = TRUE))
+```
+
+```{r}
+ggplot(weekday_weekend_holiday_killed, aes(x = day_type_holiday, y = total_killed, fill = day_type_holiday)) +
+  geom_bar(stat = "identity", width = 0.5) +
+  labs(x = "Day Type", y = "Total Killed", title = "Total Killed by Day Type") +
+  geom_text(aes(label = total_killed), vjust = -0.5, size = 3) +
+  theme_minimal() +
+  geom_line(aes(x = day_type_holiday, y = average_killed*1000000, group = 1), color = "blue") +
+  geom_text(aes(x = day_type_holiday, y = average_killed*1000000, label = round(average_killed, 5)), vjust = -1, size = 3, color = "black") +
+  scale_y_continuous(sec.axis = sec_axis(~./1000000, name = "Average Killed"))+scale_fill_brewer(palette = "Set2")
+```
+
+### Weekday weekend and holiday VS pedestrians injured
+
+```{r}
+weekday_weekend_holiday_injured <- data_12_to_23 %>%
+  group_by(day_type_holiday) %>%
+  summarize(total_injured = sum(NUMBER.OF.PEDESTRIANS.INJURED, na.rm = TRUE),
+            average_injured = mean(NUMBER.OF.PEDESTRIANS.INJURED, na.rm = TRUE))
+```
+
+```{r}
+ggplot(weekday_weekend_holiday_injured, aes(x = day_type_holiday, y = total_injured, fill = day_type_holiday)) +
+  geom_bar(stat = "identity", width = 0.5) +
+  labs(x = "Day Type", y = "Total injured", title = "Total injured by Day Type") +
+  geom_text(aes(label = total_injured), vjust = -0.5, size = 3) +
+  theme_minimal() +
+  geom_line(aes(x = day_type_holiday, y = average_injured*1000000, group = 1), color = "blue") +
+  geom_text(aes(x = day_type_holiday, y = average_injured*1000000, label = round(average_injured, 3)), vjust = -1, size = 3, color = "black") +
+  scale_y_continuous(sec.axis = sec_axis(~./1000000, name = "Average Injured"))
+```
+
+### Weekday weekend and holiday VS pedestrians killed
+
+```{r}
+weekday_weekend_holiday_killed <- data_12_to_23 %>%
+  group_by(day_type_holiday) %>%
+  summarize(total_killed = sum(NUMBER.OF.PEDESTRIANS.KILLED, na.rm = TRUE),
+            average_killed = mean(NUMBER.OF.PEDESTRIANS.KILLED, na.rm = TRUE))
+```
+
+```{r}
+ggplot(weekday_weekend_holiday_killed, aes(x = day_type_holiday, y = total_killed, fill = day_type_holiday)) +
+  geom_bar(stat = "identity", width = 0.5) +
+  labs(x = "Day Type", y = "Total Killed", title = "Total Killed by Day Type") +
+  geom_text(aes(label = total_killed), vjust = -0.5, size = 3) +
+  theme_minimal() +
+  geom_line(aes(x = day_type_holiday, y = average_killed*1000000, group = 1), color = "blue") +
+  geom_text(aes(x = day_type_holiday, y = average_killed*1000000, label = round(average_killed, 5)), vjust = -1, size = 3, color = "black") +
+  scale_y_continuous(sec.axis = sec_axis(~./1000000, name = "Average Killed"))
+```
+
+### Weekday weekend and holiday VS Cyclist injured
+
+```{r}
+weekday_weekend_holiday_injured <- data_12_to_23 %>%
+  group_by(day_type_holiday) %>%
+  summarize(total_injured = sum(NUMBER.OF.CYCLIST.INJURED , na.rm = TRUE),
+            average_injured = mean(NUMBER.OF.CYCLIST.INJURED , na.rm = TRUE))
+```
+
+```{r}
+ggplot(weekday_weekend_holiday_injured, aes(x = day_type_holiday, y = total_injured, fill = day_type_holiday)) +
+  geom_bar(stat = "identity", width = 0.5) +
+  labs(x = "Day Type", y = "Total injured", title = "Total injured by Day Type") +
+  geom_text(aes(label = total_injured), vjust = -0.5, size = 3) +
+  theme_minimal() +
+  geom_line(aes(x = day_type_holiday, y = average_injured*1000000, group = 1), color = "blue") +
+  geom_text(aes(x = day_type_holiday, y = average_injured*1000000, label = round(average_injured, 4)), vjust = -1, size = 3, color = "black") +
+  scale_y_continuous(sec.axis = sec_axis(~./1000000, name = "Average Injured"))
+```
+
+### Weekday weekend and holiday VS cyclist killed
+
+```{r}
+weekday_weekend_holiday_killed <- data_12_to_23 %>%
+  group_by(day_type_holiday) %>%
+  summarize(total_killed = sum(NUMBER.OF.CYCLIST.KILLED, na.rm = TRUE),
+            average_killed = mean(NUMBER.OF.CYCLIST.KILLED, na.rm = TRUE))
+```
+
+```{r}
+ggplot(weekday_weekend_holiday_killed, aes(x = day_type_holiday, y = total_killed, fill = day_type_holiday)) +
+  geom_bar(stat = "identity", width = 0.5) +
+  labs(x = "Day Type", y = "Total Killed", title = "Total Killed by Day Type") +
+  geom_text(aes(label = total_killed), vjust = -0.5, size = 3) +
+  theme_minimal() +
+  geom_line(aes(x = day_type_holiday, y = average_killed*700000, group = 1), color = "blue") +
+  geom_text(aes(x = day_type_holiday, y = average_killed*700000, label = round(average_killed, 6)), vjust = -1, size = 3, color = "black") +
+  scale_y_continuous(sec.axis = sec_axis(~./700000, name = "Average Killed"))
+```
+
+### Weekday weekend and holiday VS Motorist injured
+
+```{r}
+weekday_weekend_holiday_injured <- data_12_to_23 %>%
+  group_by(day_type_holiday) %>%
+  summarize(total_injured = sum(NUMBER.OF.MOTORIST.INJURED , na.rm = TRUE),
+            average_injured = mean(NUMBER.OF.MOTORIST.INJURED , na.rm = TRUE))
+```
+
+```{r}
+ggplot(weekday_weekend_holiday_injured, aes(x = day_type_holiday, y = total_injured, fill = day_type_holiday)) +
+  geom_bar(stat = "identity", width = 0.5) +
+  labs(x = "Day Type", y = "Total injured", title = "Total injured by Day Type") +
+  geom_text(aes(label = total_injured), vjust = -0.5, size = 3) +
+  geom_line(aes(x = day_type_holiday, y = average_injured*1000000, group = 1), color = "blue") +
+  theme_minimal() +
+  geom_line(aes(x = day_type_holiday, y = average_injured*1000000, group = 1), color = "blue") +
+  geom_text(aes(x = day_type_holiday, y = average_injured*1000000, label = round(average_injured, 4)), vjust = -1, size = 3, color = "black") +
+  scale_y_continuous(sec.axis = sec_axis(~./1000000, name = "Average Injured"))
+```
+
+### Weekday weekend and holiday VS motorist killed
+
+```{r}
+weekday_weekend_holiday_killed <- data_12_to_23 %>%
+  group_by(day_type_holiday) %>%
+  summarize(total_killed = sum(NUMBER.OF.MOTORIST.KILLED, na.rm = TRUE),
+            average_killed = mean(NUMBER.OF.MOTORIST.KILLED, na.rm = TRUE))
+```
+
+```{r}
+ggplot(weekday_weekend_holiday_killed, aes(x = day_type_holiday, y = total_killed, fill = day_type_holiday)) +
+  geom_bar(stat = "identity", width = 0.5) +
+  labs(x = "Day Type", y = "Total Killed", title = "Total Killed by Day Type") +
+  geom_text(aes(label = total_killed), vjust = -0.5, size = 3) +
+  theme_minimal() +
+  geom_line(aes(x = day_type_holiday, y = average_killed*700000, group = 1), color = "blue") +
+  geom_text(aes(x = day_type_holiday, y = average_killed*700000, label = round(average_killed, 6)), vjust = -1, size = 3, color = "black") +
+  scale_y_continuous(sec.axis = sec_axis(~./700000, name = "Average Killed"))
+```
+
