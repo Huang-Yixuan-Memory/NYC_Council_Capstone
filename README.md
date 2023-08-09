@@ -13,4 +13,11 @@ We have three main folders, **_data visualization, data cleaning, and final code
 
 **Data cleaning**
 
-- 
+- [speed limit](https://github.com/Huang-Yixuan-Memory/NYC_Council_Capstone/blob/main/data%20cleaning/speed%20limit.html) - this file shows how we join the latitude and longitude to the original data.
+- [Joinning collision data with holiday and weather data](https://github.com/Huang-Yixuan-Memory/NYC_Council_Capstone/blob/main/data%20cleaning/Joinning%20Collision%20Data%20with%20Holiday%20and%20Weather%20Data.html) - this file shows how to join the holiday and weather data into the previous dataset.
+- [collision with holiday and weather](https://github.com/Huang-Yixuan-Memory/NYC_Council_Capstone/blob/main/data%20cleaning/collision%20with%20holiday%20and%20weather.html) - this file shows part of data prep for the processed data before and also shows the data visualization of the number of kills and injured in different weather and day type.
+
+**Final code**
+
+
+
