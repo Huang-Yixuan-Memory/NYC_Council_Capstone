@@ -1,5 +1,5 @@
 ---
-title: "Q1_Regression"
+title: "Inquiry 1_Regression"
 output:
   html_document:
     toc: true
