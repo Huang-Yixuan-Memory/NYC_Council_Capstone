@@ -1,0 +1,123 @@
+---
+title: "Inquiry3_part1"
+author: "Yuxuan zhang"
+date: "2023-08-09"
+output: html_document
+---
+```{r}
+library(dplyr)
+library(ggplot2)
+library(lubridate)
+library(tidyverse)
+```
+
+
+```{r}
+df <- read.csv("processed_data.csv")
+
+df <- df %>% drop_na(NUMBER.OF.PERSONS.INJURED, NUMBER.OF.PERSONS.KILLED)
+
+df$CRASH.DATE <- as.Date(df$CRASH.DATE, format = "%Y-%m-%d")
+```
+```{r}
+#Initiative 1.18 started in 2014
+df$Initiative_1.18 <- ifelse(year(df$CRASH.DATE) >= 2014, "After", "Before")
+
+summary_df <- df %>%
+  group_by(Initiative_1.18) %>%
+  summarise(Total_Injuries = sum(NUMBER.OF.PERSONS.INJURED),
+            Total_Deaths = sum(NUMBER.OF.PERSONS.KILLED), 
+            Total_Incidents = n())
+summary_df
+```
+```{r}
+# Add columns for percentage of injuries and deaths per incident
+summary_df <- summary_df %>%
+  mutate(Percentage_Injuries = Total_Injuries / Total_Incidents * 100,
+         Percentage_Deaths = Total_Deaths / Total_Incidents * 100)
+```
+```{r}
+# Reshape the data for plotting
+plot_df <- summary_df %>%
+  pivot_longer(cols = starts_with("Percentage"),
+               names_to = "Metric",
+               values_to = "Percentage")
+```
+
+
+```{r}
+# Plot
+ggplot(plot_df, aes(x = Initiative_1.18, y = Percentage, fill = Metric)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  theme_minimal() +
+  labs(title = "Percentage of Injuries and Deaths Before and After Initiative 1.18",
+       x = "Initiative 1.18", y = "Percentage (%)") +
+  scale_fill_manual(values = c("Percentage_Injuries" = "steelblue", "Percentage_Deaths" = "firebrick")) +
+  guides(fill = guide_legend(title = "Metric"))
+```
+
+```{r}
+# Plot Total Injuries
+ggplot(summary_df, aes(x = Initiative_1.18, y = Total_Injuries, fill = Initiative_1.18)) +
+  geom_bar(stat = "identity") +
+  theme_minimal() +
+  labs(title = "Total Injuries Before and After Initiative 1.18",
+       x = "Initiative 1.18", y = "Total Injuries") +
+  scale_fill_manual(values=c("Before"="blue", "After"="red"))
+```
+```{r}
+# Plot Total Deaths
+ggplot(summary_df, aes(x = Initiative_1.18, y = Total_Deaths, fill = Initiative_1.18)) +
+  geom_bar(stat = "identity") +
+  theme_minimal() +
+  labs(title = "Total Deaths Before and After Initiative 1.18",
+       x = "Initiative 1.18", y = "Total Injuries") +
+  scale_fill_manual(values=c("Before"="blue", "After"="red"))
+```
+
+```{r}
+# Plot Total Incidents
+ggplot(summary_df, aes(x = Initiative_1.18, y = Total_Incidents, fill = Initiative_1.18)) +
+  geom_bar(stat = "identity") +
+  theme_minimal() +
+  labs(title = "Total Incidents Before and After Initiative 1.18",
+       x = "Initiative 1.18", y = "Total Injuries") +
+  scale_fill_manual(values=c("Before"="blue", "After"="red"))
+```
+
+```{r}
+# Calculate summary statistics before and after the initiative
+summary_stats <- df %>%
+  group_by(Initiative_1.18) %>%
+  summarise(
+    mean_injuries = mean(NUMBER.OF.PERSONS.INJURED, na.rm = TRUE),
+    mean_deaths = mean(NUMBER.OF.PERSONS.KILLED, na.rm = TRUE)
+  )
+
+summary_stats
+```
+
+```{r}
+# Perform t-test comparing mean number of injuries before and after initiative
+injuries_t_test <- t.test(NUMBER.OF.PERSONS.INJURED ~ Initiative_1.18, data = df)
+
+injuries_t_test
+```
+
+```{r}
+# Perform t-test comparing mean number of deaths before and after initiative
+deaths_t_test <- t.test(NUMBER.OF.PERSONS.KILLED ~ Initiative_1.18, data = df)
+deaths_t_test
+```
+
+```{r}
+# Regression
+df$Initiative_1.18 <- ifelse(df$Initiative_1.18 == "After", 1, 0)
+
+model_injuries <- lm(NUMBER.OF.PERSONS.INJURED ~ Initiative_1.18, data = df)
+summary(model_injuries)
+
+model_fatalities <- lm(NUMBER.OF.PERSONS.KILLED ~ Initiative_1.18, data = df)
+summary(model_fatalities)
+```
+
